@@ -11,5 +11,5 @@ inputs:
     description: The destination repository path relative to $GITHUB_WORKSPACE.
     required: true
 runs:
-  using: 'node16'
-  main: 'index.js'
+  using: "node16"
+  main: "index.js"
