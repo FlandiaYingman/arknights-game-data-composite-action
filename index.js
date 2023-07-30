@@ -13,35 +13,37 @@ function isJSON(jsonString) {
   return false;
 }
 
-try {
-  const workspace = process.env["GITHUB_WORKSPACE"];
-  const trackedFiles = core.getMultilineInput("tracked-files");
-  const origin = core.getInput("origin");
-  const dest = core.getInput("dest");
+(async function () {
+  try {
+    const workspace = process.env["GITHUB_WORKSPACE"];
+    const trackedFiles = core.getMultilineInput("tracked-files");
+    const origin = core.getInput("origin");
+    const dest = core.getInput("dest");
 
-  const gitOrigin = simpleGit(path.join(workspace, origin));
-  const gitDest = simpleGit(path.join(workspace, dest));
-  const destRefs = await gitDest.show("REFS");
-  for (const trackedFile of trackedFiles) {
-    const trackedFileDestPath = path.join(workspace, dest, trackedFile);
-    const trackedFileDestExists = await fs
-      .access(trackedFileDestPath, fs.constants.F_OK)
-      .then(() => true)
-      .catch(() => false);
-    const trackedObject = trackedFileDestExists ? JSON.parse(await gitDest.show(trackedFile)) : {};
-    const logResult = await gitOrigin.log({
-      file: trackedFile,
-      from: destRefs,
-    });
-    for (const log of logResult.all.slice().reverse()) {
-      const data = await gitOrigin.show(`${log.refs}:${trackedFile}`);
-      if (isJSON(data)) {
-        Object.assign(trackedObject, JSON.parse(data));
+    const gitOrigin = simpleGit(path.join(workspace, origin));
+    const gitDest = simpleGit(path.join(workspace, dest));
+    const destRefs = await gitDest.show("REFS");
+    for (const trackedFile of trackedFiles) {
+      const trackedFileDestPath = path.join(workspace, dest, trackedFile);
+      const trackedFileDestExists = await fs
+        .access(trackedFileDestPath, fs.constants.F_OK)
+        .then(() => true)
+        .catch(() => false);
+      const trackedObject = trackedFileDestExists ? JSON.parse(await gitDest.show(trackedFile)) : {};
+      const logResult = await gitOrigin.log({
+        file: trackedFile,
+        from: destRefs,
+      });
+      for (const log of logResult.all.slice().reverse()) {
+        const data = await gitOrigin.show(`${log.refs}:${trackedFile}`);
+        if (isJSON(data)) {
+          Object.assign(trackedObject, JSON.parse(data));
+        }
       }
+      await fs.mkdir(trackedFileDestPath, { recursive: true });
+      await fs.writeFile(trackedFileDestPath, JSON.stringify(trackedObject));
     }
-    await fs.mkdir(trackedFileDestPath, { recursive: true });
-    await fs.writeFile(trackedFileDestPath, JSON.stringify(trackedObject));
+  } catch (error) {
+    core.setFailed(error);
   }
-} catch (error) {
-  core.setFailed(error);
-}
+})();
