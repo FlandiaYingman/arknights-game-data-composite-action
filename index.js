@@ -1,7 +1,7 @@
-import core from "@actions/core";
-import path from "path";
-import { simpleGit } from "simple-git";
-import fs from "fs/promises";
+const core = require("@actions/core");
+const path = require("path");
+const { simpleGit } = require("simple-git");
+const fs = require("fs/promises");
 
 function isJSON(jsonString) {
   try {
