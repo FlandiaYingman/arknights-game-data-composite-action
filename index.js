@@ -45,6 +45,6 @@ function isJSON(jsonString) {
       await fs.writeFile(trackedFileDestPath, JSON.stringify(trackedObject));
     }
   } catch (error) {
-    core.setFailed(error);
+    core.setFailed(error.stack);
   }
 })();
