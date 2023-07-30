@@ -17,7 +17,7 @@ try {
   const workspace = process.env["GITHUB_WORKSPACE"];
   const trackedFiles = core.getMultilineInput("tracked-files");
   const origin = core.getInput("origin");
-  const dest = core.getInput("destination");
+  const dest = core.getInput("dest");
 
   const gitOrigin = simpleGit(path.join(workspace, origin));
   const gitDest = simpleGit(path.join(workspace, dest));
