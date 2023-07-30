@@ -1,0 +1,15 @@
+name: ArknightsGameData Composite Action
+description: Composites the history of ArknightsGameData.
+inputs:
+  tracked-files:
+    description: The files to composite
+    required: true
+  origin:
+    description: The ArknightsGameData repository path relative to $GITHUB_WORKSPACE.
+    required: true
+  dest:
+    description: The destination repository path relative to $GITHUB_WORKSPACE.
+    required: true
+runs:
+  using: 'node16'
+  main: 'index.js'
