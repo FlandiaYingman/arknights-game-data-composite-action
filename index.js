@@ -2,6 +2,7 @@ const core = require("@actions/core");
 const path = require("path");
 const { simpleGit } = require("simple-git");
 const fs = require("fs/promises");
+const { constants } = require("fs");
 
 function isJSON(jsonString) {
   try {
@@ -26,7 +27,7 @@ function isJSON(jsonString) {
     for (const trackedFile of trackedFiles) {
       const trackedFileDestPath = path.join(workspace, dest, trackedFile);
       const trackedFileDestExists = await fs
-        .access(trackedFileDestPath, fs.constants.F_OK)
+        .access(trackedFileDestPath, constants.F_OK)
         .then(() => true)
         .catch(() => false);
       const trackedObject = trackedFileDestExists ? JSON.parse(await gitDest.show(trackedFile)) : {};
