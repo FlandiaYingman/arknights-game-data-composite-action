@@ -15,7 +15,7 @@ function isJSON(jsonString) {
 
 async function exists(git, path) {
   try {
-    await git.catFile(["-e", `HEAD:${path}`]);
+    await git.catFile(["-e", path]);
     return true;
   } catch {
     return false;
@@ -35,7 +35,7 @@ async function exists(git, path) {
     const rev = await gitDest.show("HEAD:REV");
     for (const trackedFile of trackedFiles) {
       const trackedFileDestPath = path.join(workspace, dest, trackedFile);
-      const trackedObject = (await exists(gitDest, trackedFile))
+      const trackedObject = (await exists(gitDest, `HEAD:${trackedFile}`))
         ? JSON.parse(await gitDest.show(`HEAD:${trackedFile}`))
         : {};
       const logResult = await gitOrigin.log({
@@ -43,9 +43,11 @@ async function exists(git, path) {
         from: rev,
       });
       for (const log of logResult.all.slice().reverse()) {
-        const data = await gitOrigin.show(`${log.hash}:${trackedFile}`);
-        if (isJSON(data)) {
-          Object.assign(trackedObject, JSON.parse(data));
+        if (await exists(gitOrigin, `${log.hash}:${trackedFile}`)) {
+          const data = await gitOrigin.show(`${log.hash}:${trackedFile}`);
+          if (isJSON(data)) {
+            Object.assign(trackedObject, JSON.parse(data));
+          }
         }
       }
       await fs.mkdir(path.dirname(trackedFileDestPath), { recursive: true });
