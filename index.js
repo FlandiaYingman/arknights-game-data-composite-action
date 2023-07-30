@@ -23,7 +23,7 @@ function isJSON(jsonString) {
 
     const gitOrigin = simpleGit(path.join(workspace, origin));
     const gitDest = simpleGit(path.join(workspace, dest));
-    const destRefs = await gitDest.show("REFS");
+    const destRev = await gitDest.show("REV");
     for (const trackedFile of trackedFiles) {
       const trackedFileDestPath = path.join(workspace, dest, trackedFile);
       const trackedFileDestExists = await fs
@@ -33,7 +33,7 @@ function isJSON(jsonString) {
       const trackedObject = trackedFileDestExists ? JSON.parse(await gitDest.show(trackedFile)) : {};
       const logResult = await gitOrigin.log({
         file: trackedFile,
-        from: destRefs,
+        from: destRev,
       });
       for (const log of logResult.all.slice().reverse()) {
         const data = await gitOrigin.show(`${log.refs}:${trackedFile}`);
