@@ -23,7 +23,12 @@ try {
   const gitDest = simpleGit(path.join(workspace, dest));
   const destRefs = await gitDest.show("REFS");
   for (const trackedFile of trackedFiles) {
-    const trackedObject = JSON.parse(await gitDest.show(trackedFile));
+    const trackedFileDestPath = path.join(workspace, dest, trackedFile);
+    const trackedFileDestExists = await fs
+      .access(trackedFileDestPath, fs.constants.F_OK)
+      .then(() => true)
+      .catch(() => false);
+    const trackedObject = trackedFileDestExists ? JSON.parse(await gitDest.show(trackedFile)) : {};
     const logResult = await gitOrigin.log({
       file: trackedFile,
       from: destRefs,
@@ -34,10 +39,8 @@ try {
         Object.assign(trackedObject, JSON.parse(data));
       }
     }
-    await fs.writeFile(
-      path.join(workspace, dest, trackedFile),
-      JSON.stringify(trackedObject),
-    );
+    await fs.mkdir(trackedFileDestPath, { recursive: true });
+    await fs.writeFile(trackedFileDestPath, JSON.stringify(trackedObject));
   }
 } catch (error) {
   core.setFailed(error);
