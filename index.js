@@ -2,7 +2,6 @@ const core = require("@actions/core");
 const path = require("path");
 const { simpleGit } = require("simple-git");
 const fs = require("fs/promises");
-const { constants } = require("fs");
 
 function isJSON(jsonString) {
   try {
@@ -14,6 +13,15 @@ function isJSON(jsonString) {
   return false;
 }
 
+async function exists(git, path) {
+  try {
+    await git.catFile(["-e", `HEAD:${path}`]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 (async function () {
   try {
     const workspace = process.env["GITHUB_WORKSPACE"];
@@ -23,26 +31,25 @@ function isJSON(jsonString) {
 
     const gitOrigin = simpleGit(path.join(workspace, origin));
     const gitDest = simpleGit(path.join(workspace, dest));
-    const destRev = await gitDest.show("REV");
+
+    const rev = await gitDest.show("HEAD:REV");
     for (const trackedFile of trackedFiles) {
       const trackedFileDestPath = path.join(workspace, dest, trackedFile);
-      const trackedFileDestExists = await fs
-        .access(trackedFileDestPath, constants.F_OK)
-        .then(() => true)
-        .catch(() => false);
-      const trackedObject = trackedFileDestExists ? JSON.parse(await gitDest.show(trackedFile)) : {};
+      const trackedObject = (await exists(gitDest, trackedFile))
+        ? JSON.parse(await gitDest.show(`HEAD:${trackedFile}`))
+        : {};
       const logResult = await gitOrigin.log({
         file: trackedFile,
-        from: destRev,
+        from: rev,
       });
       for (const log of logResult.all.slice().reverse()) {
-        const data = await gitOrigin.show(`${log.refs}:${trackedFile}`);
+        const data = await gitOrigin.show(`${log.hash}:${trackedFile}`);
         if (isJSON(data)) {
           Object.assign(trackedObject, JSON.parse(data));
         }
       }
-      await fs.mkdir(trackedFileDestPath, { recursive: true });
-      await fs.writeFile(trackedFileDestPath, JSON.stringify(trackedObject));
+      await fs.mkdir(path.dirname(trackedFileDestPath), { recursive: true });
+      await fs.writeFile(trackedFileDestPath, JSON.stringify(trackedObject, null, 2));
     }
   } catch (error) {
     core.setFailed(error.stack);
