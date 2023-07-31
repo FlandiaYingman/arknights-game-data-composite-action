@@ -1,7 +1,7 @@
 name: ArknightsGameData Composite Action
 description: Composites the history of ArknightsGameData.
 inputs:
-  tracked-files:
+  tracking-files:
     description: The files to composite
     required: true
   origin:
